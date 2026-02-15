@@ -1,0 +1,29 @@
+name: publish
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node version for publish'
+        required: false
+        type: string
+        default: '20.x'
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+      - name: Publish to npm
+        run: | # npm 11.15.1 for OIDC support
+          npm install -g npm@11
+          npm ci
+          npm install
+          npm publish --access public
