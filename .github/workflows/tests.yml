@@ -13,6 +13,11 @@ on:
         required: false
         type: boolean
         default: true
+      build:
+        description: 'Run npm run build before lint/test'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -29,6 +34,8 @@ jobs:
           # cache: "npm" # needs lockfile if enabled
 
       - run: npm install
+      - if: ${{ inputs.build }}
+        run: npm run build
       - if: ${{ inputs.lint }}
         run: npm run lint
       - run: npm test

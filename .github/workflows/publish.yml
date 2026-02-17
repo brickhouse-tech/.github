@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: '20.x'
+      build:
+        description: 'Run npm run build before publish'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish-npm:
@@ -26,4 +31,5 @@ jobs:
           npm install -g npm@11
           npm ci
           npm install
+          ${{ inputs.build && 'npm run build' || 'echo "skipping build"' }}
           npm publish --access public
