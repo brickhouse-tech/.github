@@ -13,6 +13,11 @@ on:
         required: false
         type: boolean
         default: false
+      tag:
+        description: 'npm dist-tag (e.g. pre, beta, next). Empty for latest.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   publish-npm:
@@ -32,4 +37,4 @@ jobs:
           npm ci
           npm install
           ${{ inputs.build && 'npm run build' || 'echo "skipping build"' }}
-          npm publish --access public
+          npm publish --access public ${{ inputs.tag && format('--tag {0}', inputs.tag) || '' }}
