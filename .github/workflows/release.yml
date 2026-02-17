@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: '20.x'
+      prerelease:
+        description: 'Prerelease tag (e.g. alpha, beta, rc). Empty for stable release.'
+        required: false
+        type: string
+        default: ''
     secrets:
       GH_TOKEN:
         description: 'GitHub token with push access for tags'
@@ -51,13 +56,20 @@ jobs:
             RANGE="HEAD"
           fi
 
-          # Check all commits (not just first-parent) for breaking changes
-          if git log $RANGE --format="%B" | grep -qE "(^[a-z]+!:|BREAKING CHANGE:)"; then
-            echo "Breaking change detected, forcing major version bump"
-            npx commit-and-tag-version --release-as major
+          # Build version args
+          VERSION_ARGS=""
+          if [ -n "${{ inputs.prerelease }}" ]; then
+            VERSION_ARGS="--prerelease ${{ inputs.prerelease }}"
+            echo "Prerelease mode: ${{ inputs.prerelease }}"
           else
-            npx commit-and-tag-version
+            # Check all commits (not just first-parent) for breaking changes
+            if git log $RANGE --format="%B" | grep -qE "(^[a-z]+!:|BREAKING CHANGE:)"; then
+              echo "Breaking change detected, forcing major version bump"
+              VERSION_ARGS="--release-as major"
+            fi
           fi
+
+          npx commit-and-tag-version $VERSION_ARGS
 
           git push
           git push --tags
