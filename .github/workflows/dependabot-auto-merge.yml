@@ -2,6 +2,10 @@
 # Called by individual repos via workflow_call
 # Requires the caller to trigger on pull_request_target
 #
+# Behavior:
+#   - Patch & minor bumps: auto-approve + auto-merge (waits for required checks)
+#   - Major bumps: skipped — left for human review
+#
 # Usage in each repo:
 #   name: Dependabot Auto-Merge
 #   on: pull_request_target
@@ -26,14 +30,23 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Auto-approve
+      - name: Auto-approve (patch/minor only)
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge (merge)
+      - name: Enable auto-merge (patch/minor only)
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr merge --merge --auto "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Label major bumps for review
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: gh pr edit "$PR_URL" --add-label "major-bump"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
