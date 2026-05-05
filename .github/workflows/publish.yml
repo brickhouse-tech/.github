@@ -7,7 +7,11 @@ on:
         description: 'Node version for publish'
         required: false
         type: string
-        default: '20.x'
+        # Node 24 (LTS since Oct 2025) bundles npm 11.x out of the box
+        # (24.15.0 → 11.12.1), which supports OIDC trusted publishing +
+        # --provenance with no extra pin step. Consumers needing a
+        # different version can override via `with: node-version: ...`.
+        default: '24.x'
       build:
         description: 'Run npm run build before publish'
         required: false
@@ -32,8 +36,7 @@ jobs:
           node-version: ${{ inputs.node-version }}
           registry-url: 'https://registry.npmjs.org'
       - name: Publish to npm
-        run: | # npm 11.15.1 for OIDC support
-          npm install -g npm@11
+        run: |
           npm ci
           npm install
           ${{ inputs.build && 'npm run build' || 'echo "skipping build"' }}
