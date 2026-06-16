@@ -6,6 +6,17 @@
 #   - Patch & minor bumps: auto-approve + auto-merge (waits for required checks)
 #   - Major bumps: skipped — left for human review
 #
+# IMPORTANT — release cascade:
+#   Auto-merge is ENABLED with a PAT (secrets.GH_TOKEN), not the default
+#   GITHUB_TOKEN. A merge performed via GITHUB_TOKEN does NOT trigger downstream
+#   workflows (GitHub's recursion guard), so a `release.yml` listening on
+#   `push: branches: [master]` would never fire after a Dependabot merge — no
+#   tag, no publish. Enabling auto-merge with a PAT attributes the eventual
+#   merge commit to that token, which re-triggers the release pipeline.
+#   The PAT must be available to Dependabot-triggered runs, i.e. stored as a
+#   *Dependabot* secret, and the caller must forward it with `secrets: inherit`.
+#   Falls back to GITHUB_TOKEN if GH_TOKEN is not passed (merges, but no cascade).
+#
 # Usage in each repo:
 #   name: Dependabot Auto-Merge
 #   on: pull_request_target
@@ -15,9 +26,16 @@
 #   jobs:
 #     dependabot:
 #       uses: brickhouse-tech/.github/.github/workflows/dependabot-auto-merge.yml@master
+#       secrets: inherit
 
 on:
   workflow_call:
+    secrets:
+      GH_TOKEN:
+        description: >-
+          PAT used to enable auto-merge so the merge cascades into the release
+          workflow. Optional; falls back to GITHUB_TOKEN (no release cascade).
+        required: false
 
 jobs:
   auto-merge:
@@ -39,10 +57,12 @@ jobs:
 
       - name: Enable auto-merge (patch/minor only)
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        # Enable with the PAT so the merge cascades into release.yml. Without a
+        # PAT the merge still happens, but downstream release/publish will not.
         run: gh pr merge --merge --auto "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Label major bumps for review
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
