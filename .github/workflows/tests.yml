@@ -7,7 +7,7 @@ on:
         description: 'JSON array of node versions to test'
         required: false
         type: string
-        default: '["20.x", "22.x", "24.x"]'
+        default: '[ "20.x", "22.x", "24.x" ]'
       lint:
         description: 'Run npm run lint'
         required: false
