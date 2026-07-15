@@ -7,7 +7,7 @@ on:
         description: 'Node version for release'
         required: false
         type: string
-        default: '20.x'
+        default: '22.x'
       prerelease:
         description: 'Prerelease tag (e.g. alpha, beta, rc). Empty for stable release.'
         required: false
@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
 
